@@ -1,0 +1,117 @@
+---
+title: "Trabajo Final"
+author: "Oscar Joseph Rodriguez"
+date: "31/8/2021"
+output: html_document
+---
+## Lectura de datos
+
+Se utilizará los datos de los productores de Lulo en fruta cosechada
+<!-- lectura del archivo (Lulo) -->
+```{r lectura,message=FALSE,warning=FALSE}
+Datos <- read.csv("Datos/Lulo_Colombia.csv", row.names = 1,stringsAsFactors = T)
+head(Datos)
+```
+
+## Busqueda de valores perdidos o atípicos
+se hará un analisis de dispersion  para identificar la dispersion de los valores encontrados
+
+```{r complete,message=FALSE,warning=FALSE}
+Datos <- Datos[complete.cases(Datos),]
+head(Datos)
+```
+Se puede establecer que en primera instancia no ha habido perdida de datos, debido
+a que los datos iniciales con los de *"complete.cases"* son iguales
+
+```{r plot1,message=FALSE,warning=FALSE}
+plot(Datos)
+```
+
+
+
+Para definir cual es la variable que tiene mayor correlacion con la produccion de
+Lulo, crearemos un dataframe con los valores de correlacion
+
+### Correlacion de datos
+Se busca la correlacion de la produccion con las otras variables y se busca el mayor valor
+
+```{r correl1,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(dplyr)
+Cor.Data <- c(cor(Datos$Yield,Datos$srtm), cor(Datos$Yield,Datos$slope), 
+              cor(Datos$Yield,Datos$effDepth), cor(Datos$Yield,Datos$trmm_0),
+              cor(Datos$Yield,Datos$trmm_1),cor(Datos$Yield,Datos$trmm_2),
+              cor(Datos$Yield,Datos$tempAvg_0),cor(Datos$Yield,Datos$PrecAcc_0),
+              cor(Datos$Yield,Datos$PrecAcc_1),cor(Datos$Yield,Datos$PrecAcc_2))
+Cor.Title <- c("Altitud", "Pendiente", "Prof. Efectiva", "Pp.mes cosecha", "Pp.1 mes cosecha",
+               "Pp.2 mes cosecha", "Temperatura promedio", "Pp. Acum. cosecha",
+               "Pp. Acum. 1 mes", "Pp. Acum. 2 mes")
+
+correl <- data.frame(Cor.Title, Cor.Data)
+max (correl$Cor.Data)
+min (correl$Cor.Data)
+```
+Ordenando la correlacion
+```{r correl2,warning=FALSE,message=FALSE}
+correl <- correl %>% arrange (desc(Cor.Data))
+```
+
+
+```{r barras1,warning=FALSE,message=FALSE}
+ggplot(correl, aes(x=Cor.Title,y=Cor.Data))+
+  geom_col(fill="Orange")+
+  xlab("Variables")+
+  ylab("Correlacion")+
+  ggtitle("Grafico 01. Correlación de la producción con otras variables")+
+  theme(axis.title.x=element_text(),
+        axis.text.x = element_text(angle=90, vjust = 0.5, size = 8))
+
+  
+```
+Del grafico se puede apreciar que la mayor correlacion de las variables respecto
+a la produccion de Lulo estan en las variables:
+
+ * Pendiente
+ * temperatura promedio
+ * Profundidad efectiva
+ * Altitud
+ 
+ las cuales afectan a la produccion de forma directa, siendo la mayor influencia
+ la de la pendiente, la precipitacion tiene un valor de correlacion negativo
+ cercano a 0 (-0.07), por lo que se podria considerr que es la variable que
+ menor influencia tiene sobre la produccion.
+ 
+ Los valores de correlacion son los siguientes:
+ 
+```{r}
+knitr::kable(
+  correl,
+  caption = "Tabla 01. Valores de correlacion"
+)
+```
+## Analisis de la variable pendiente
+Respecto a la pendiente, los siguientes analisis demuestran como es influenciada
+esta variable y el analisis en cuanto a la ubicacion de las muestras:
+
+```{r pendiente1,message=FALSE,warning=FALSE}
+ggplot(Datos, aes(x=slope, y=Yield)) + geom_boxplot()+
+  xlab("Pendiente (%)")+
+  ylab("Rendimiento (Ton/ha)")+
+  facet_grid(.~Locality)+
+  ggtitle("Gráfico 2. Rendimiento del Lulo en funcion a la pendiente y la localizacion")
+  theme_bw()
+Tab_Rdto <- Datos %>% summarise(Promedio=mean(slope, na.rm=T), 
+                    Max=max(slope, na.rm=T),
+                    Min=min(slope, na.rm=T),
+                    SD=sd(slope, na.rm=T))  
+
+knitr::kable(
+  Tab_Rdto,
+  caption = "Tabla 2. Valores de la pendiente"
+)
+```
+
+
+
+
+
